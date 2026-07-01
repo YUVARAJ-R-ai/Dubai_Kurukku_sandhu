@@ -14,6 +14,7 @@ Repo: `YUVARAJ-R-ai/Dubai_Kurukku_sandhu`
 ## Key docs
 - `README.md` — team onboarding + how to proceed
 - `docs/research.md` — full research brief (features, tasks, tech, risks)
+- `docs/architecture.md` — full pipeline diagram (Mermaid) — imagery → mask → graph → dashboard
 
 ## Branching
 - `main` — protected, stable

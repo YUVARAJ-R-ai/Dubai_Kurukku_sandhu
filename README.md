@@ -29,6 +29,7 @@ Standard satellite road extraction fails due to **"spectral blindness"** — can
 On top of this sits a **conversational decision layer** — a **LangGraph + LangChain** agent (powered by Claude) that lets non-technical planners ask resilience questions in plain English and have the analysis tools run for them.
 
 Full detail, competitive landscape, and risks are in **[docs/research.md](docs/research.md)** — read this before the pitch.
+The full pipeline diagram (all stages + team tracks) is in **[docs/architecture.md](docs/architecture.md)**.
 
 ---
 
