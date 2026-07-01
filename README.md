@@ -26,6 +26,8 @@ Standard satellite road extraction fails due to **"spectral blindness"** — can
 2. **Topological healing** — convert the mask to a graph (skeletonize + `sknw`), then bridge occlusion gaps with **union-find + MST**, gated by distance and angular alignment, into one connected routable network.
 3. **Criticality & stress testing** — **betweenness centrality** finds "Gatekeeper Nodes"; **node ablation** simulates floods/accidents and produces a **Resilience Index** that quantifies how badly the network degrades.
 
+On top of this sits a **conversational decision layer** — a **LangGraph + LangChain** agent (powered by Claude) that lets non-technical planners ask resilience questions in plain English and have the analysis tools run for them.
+
 Full detail, competitive landscape, and risks are in **[docs/research.md](docs/research.md)** — read this before the pitch.
 
 ---
@@ -39,7 +41,7 @@ We work in **4 parallel tracks**. Each teammate owns one track; issues are label
 | **A — ML / Segmentation** | _@_______ | Model training, clDice loss, attention/SegFormer, occlusion handling | `track-ml` | Phase I |
 | **B — Data Pipeline** | _@_______ | Tiling (Rasterio/GDAL), OSM auto-labeling, occlusion augmentation | `track-data` | Phase I |
 | **C — Graph & Analysis** | _@_______ | Mask→graph, MST healing, centrality, ablation, Resilience Index | `track-graph` | Phase II + III |
-| **D — Dashboard** | _@_______ | Streamlit + folium map, criticality heatmap, click-to-disable sim | `track-dashboard` | Phase IV |
+| **D — Dashboard + AI Assistant** | _@_______ | Streamlit + folium map, criticality heatmap, click-to-disable sim, **LangGraph/LangChain conversational assistant** | `track-dashboard` | Phase IV |
 
 > **Fill in your GitHub username** in the table above and self-assign your issues on the [board](https://github.com/users/YUVARAJ-R-ai/projects/9).
 
@@ -87,7 +89,7 @@ gh pr create --fill                                          # raise PR
 | Phase I — Segmentation | Data pipeline + occlusion-robust model | If shortlisted |
 | Phase II — Graph Healing | Mask→graph, MST/union-find healing, export | If shortlisted |
 | Phase III — Analysis & Stress Test | Centrality, ablation, Resilience Index, APLS | If shortlisted |
-| Phase IV — Dashboard | Streamlit map, heatmap, click-to-disable sim | If shortlisted |
+| Phase IV — Dashboard + AI Assistant | Streamlit map, heatmap, click-to-disable sim, LangGraph/LangChain assistant | If shortlisted |
 
 ---
 
@@ -103,6 +105,7 @@ gh pr create --fill                                          # raise PR
 | Analysis | NetworkX (betweenness, efficiency) + OSMnx (OSM ground truth) |
 | Topology metric | APLS (CosmiQ) |
 | Dashboard | Streamlit + streamlit-folium (Leaflet) |
+| Agent / NL layer | LangGraph + LangChain + `langchain-anthropic` → Claude (`claude-sonnet-5`) |
 
 ---
 
