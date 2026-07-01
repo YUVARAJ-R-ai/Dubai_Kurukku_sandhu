@@ -23,7 +23,7 @@ The build tasks (Phases I–IV) are already on the board as backlog — we touch
 Standard satellite road extraction fails due to **"spectral blindness"** — canopy, shadows, clouds — producing broken masks that can't be used for routing or disaster response. We fix this in three moves:
 
 1. **Occlusion-robust segmentation** — a context-aware deep-learning model (U-Net/DeepLabV3+ → SegFormer) trained with synthetic occlusions and a **topology-preserving clDice loss** to infer road continuity through obstructions.
-2. **Topological healing** — convert the mask to a graph (skeletonize + `sknw`), then bridge occlusion gaps with **union-find + MST**, gated by distance and angular alignment, into one connected routable network.
+2. **Topological healing** — convert the mask to a graph (skeletonize + `sknw`, cleaned with RDP), then bridge occlusion gaps with a **cycle-preserving, distance/angle-gated reconnection** (union-find tracks fragments; unlike a pure MST it also closes gaps inside grid loops) into one connected routable network.
 3. **Criticality & stress testing** — **betweenness centrality** finds "Gatekeeper Nodes"; **node ablation** simulates floods/accidents and produces a **Resilience Index** that quantifies how badly the network degrades.
 
 On top of this sits a **conversational decision layer** — a **LangGraph + LangChain** agent (powered by Claude) that lets non-technical planners ask resilience questions in plain English and have the analysis tools run for them.
@@ -41,7 +41,7 @@ We work in **4 parallel tracks**. Each teammate owns one track; issues are label
 |-------|----------------|-------|-------|-----------------|
 | **A — ML / Segmentation** | _@_______ | Model training, clDice loss, attention/SegFormer, occlusion handling | `track-ml` | Phase I |
 | **B — Data Pipeline** | _@_______ | Tiling (Rasterio/GDAL), OSM auto-labeling, occlusion augmentation | `track-data` | Phase I |
-| **C — Graph & Analysis** | _@_______ | Mask→graph, MST healing, centrality, ablation, Resilience Index | `track-graph` | Phase II + III |
+| **C — Graph & Analysis** | _@_______ | Mask→graph (+RDP), gated gap-bridging healing, centrality, ablation, Resilience Index | `track-graph` | Phase II + III |
 | **D — Dashboard + AI Assistant** | _@_______ | Streamlit + folium map, criticality heatmap, click-to-disable sim, **LangGraph/LangChain conversational assistant** | `track-dashboard` | Phase IV |
 
 > **Fill in your GitHub username** in the table above and self-assign your issues on the [board](https://github.com/users/YUVARAJ-R-ai/projects/9).
@@ -88,7 +88,7 @@ gh pr create --fill                                          # raise PR
 |-----------|------|------|
 | **Round 1 — Idea Submission** | Proposal, architecture diagram, deck, metrics | **Tomorrow** (gate) |
 | Phase I — Segmentation | Data pipeline + occlusion-robust model | If shortlisted |
-| Phase II — Graph Healing | Mask→graph, MST/union-find healing, export | If shortlisted |
+| Phase II — Graph Healing | Mask→graph (+RDP), union-find + gated gap-bridging healing, export | If shortlisted |
 | Phase III — Analysis & Stress Test | Centrality, ablation, Resilience Index, APLS | If shortlisted |
 | Phase IV — Dashboard + AI Assistant | Streamlit map, heatmap, click-to-disable sim, LangGraph/LangChain assistant | If shortlisted |
 
@@ -101,9 +101,9 @@ gh pr create --fill                                          # raise PR
 | Segmentation | `segmentation-models-pytorch` U-Net + ResNet34 → SegFormer |
 | Loss | Dice + BCE + **soft-clDice** (topology-preserving) |
 | Geo I/O | Rasterio, GDAL, Albumentations |
-| Mask→graph | scikit-image `skeletonize` + `sknw` |
-| Healing | NetworkX MST + union-find, KD-tree |
-| Analysis | NetworkX (betweenness, efficiency) + OSMnx (OSM ground truth) |
+| Mask→graph | scikit-image `skeletonize` + `sknw` + RDP simplify |
+| Healing | Union-Find + KD-tree, cycle-preserving gated gap-bridging |
+| Analysis | NetworkX (betweenness — k-sampled for live demo, efficiency) + OSMnx (OSM ground truth) |
 | Topology metric | APLS (CosmiQ) |
 | Dashboard | Streamlit + streamlit-folium (Leaflet) |
 | Agent / NL layer | LangGraph + LangChain + `langchain-anthropic` → Claude (`claude-sonnet-5`) |
@@ -114,14 +114,19 @@ gh pr create --fill                                          # raise PR
 
 ```
 .
-├── README.md            ← you are here
-├── CLAUDE.md            ← project instructions + skill registration
+├── README.md                  ← you are here
+├── CLAUDE.md                  ← project instructions + skill registration
 ├── docs/
-│   └── research.md      ← full research brief (read before pitching)
+│   ├── research.md            ← full research brief (read before pitching)
+│   ├── idea-submission.md     ← evaluator-facing proposal
+│   ├── architecture.md        ← pipeline / data-flow diagram (Mermaid)
+│   ├── metrics-feasibility.md ← metrics + 30h feasibility
+│   ├── pitch-deck-content.md  ← slide-by-slide deck content
+│   └── *.png                  ← exported architecture diagrams
 └── .claude/
     └── skills/
-        ├── new-issue/   ← /new-issue
-        └── start-task/  ← /start-task
+        ├── new-issue/         ← /new-issue
+        └── start-task/        ← /start-task
 ```
 
 ## Links
