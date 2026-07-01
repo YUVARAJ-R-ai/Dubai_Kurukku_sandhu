@@ -41,7 +41,7 @@ Yes — the key is that **both sub-teams run in parallel from hour one.**
 |-------|-----|-----------|
 | Data prep + OSM auto-labelling | Data team | 2–3 h |
 | Model fine-tuning *(pretrained ResNet34, not from scratch)* | ML team | 6–8 h |
-| Graph construction + MST healing | Graph team | 4–5 h |
+| Graph construction + gated gap-bridging healing | Graph team | 4–5 h |
 | Centrality, ablation, Resilience Index | Graph team | 2–3 h |
 | Streamlit dashboard | Dashboard team | 3–4 h |
 | Integration + buffer | All | ~6 h |
