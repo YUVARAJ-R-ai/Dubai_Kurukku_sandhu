@@ -8,6 +8,15 @@ IMG_ARCH = "docs/Prob4Extensivediagram.png"
 IMG_FLOW = "docs/Prob4ShortDia.png"
 BLANK = "________________"
 
+COLLEGE = "Vellore Institute of Technology (Chennai)"
+LEADER = "Sudharsan M"
+PEOPLE = {
+    "team leader": "Sudharsan M",
+    "team member-1": "Yuvaraj R",
+    "team member-2": "Skandan Suresh",
+    "team member-3": "Harsha Vardan M Sakamuri",
+}
+
 prs = Presentation(SRC)
 
 
@@ -64,7 +73,7 @@ for sh in s[0].shapes:
     if t.startswith("team name"):
         append_after_label(sh, "Dubai_Kurukku_sandhu")
     elif t.startswith("team leader"):
-        append_after_label(sh, BLANK)
+        append_after_label(sh, LEADER)
     elif t.startswith("problem statement"):
         append_after_label(sh, "Route Resilience — Occlusion-Robust Road Extraction & "
                                 "Graph-Theoretic Criticality Analysis for Urban Mobility")
@@ -74,15 +83,18 @@ for sh in s[1].shapes:
     if sh.has_table:
         for row in sh.table.rows:
             for cell in row.cells:
+                role = None
                 for para in cell.text_frame.paragraphs:
-                    txt = para.text.strip().lower()
-                    if txt.startswith("name:"):
-                        append_after_label_cell = para
-                        if para.runs:
-                            para.runs[0].text = para.runs[0].text.rstrip() + " " + BLANK
-                    elif txt.startswith("college:"):
-                        if para.runs:
-                            para.runs[0].text = para.runs[0].text.rstrip() + " " + BLANK
+                    low = para.text.strip().lower()
+                    if low.startswith("team leader") or low.startswith("team member"):
+                        role = low.rstrip(":").strip()
+                name = PEOPLE.get(role, BLANK)
+                for para in cell.text_frame.paragraphs:
+                    low = para.text.strip().lower()
+                    if low.startswith("name:") and para.runs:
+                        para.runs[0].text = para.runs[0].text.rstrip() + " " + name
+                    elif low.startswith("college:") and para.runs:
+                        para.runs[0].text = para.runs[0].text.rstrip() + " " + COLLEGE
 
 # ---------- Slide 3: Opportunity ----------
 fill_content(s[2].shapes[-1].text_frame, "Opportunity — what makes this different", [
