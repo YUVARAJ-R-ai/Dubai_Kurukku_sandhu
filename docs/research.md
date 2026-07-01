@@ -40,6 +40,8 @@ Satellite road extraction in dense Indian metropolises (e.g. Bengaluru) fails un
 - [ ] Connectivity Ratio + APLS evaluation harness — quantifies healing gain and topological accuracy vs OSM
 - [ ] Edge weighting by length/road-class for realistic travel time — turns the graph from topological to routable
 - [ ] GeoJSON / GraphML export — makes output actually usable downstream
+- [ ] Conversational planning assistant (LangGraph agent + LangChain tools) — natural-language front door to the analysis; a planner asks a question and the agent runs ablation/criticality/routing tools and explains the result in plain English. High demo value, directly serves the "decision support for non-technical planners" mandate
+- [ ] Agentic pipeline orchestration (LangGraph state machine) — model the segmentation→healing→analysis stages as a stateful graph with retries/branching, so partial failures (e.g. a bad tile) are handled gracefully instead of crashing the run
 
 ### Nice-to-have (Backlog)
 - [ ] Multi-resolution fusion (Sentinel-2 10m + LISS-IV 5.8m + Cartosat-3) — generalization across sources
@@ -93,6 +95,12 @@ Satellite road extraction in dense Indian metropolises (e.g. Bengaluru) fails un
 - [ ] Add soft-clDice to loss, retrain, compare fragmentation (M) ← depends on: baseline
 - [ ] Swap/add SegFormer or attention module, benchmark (L) ← depends on: training loop
 
+### Conversational planning assistant (LangChain + LangGraph)
+- [ ] Wrap graph operations as LangChain tools (`get_criticality`, `run_ablation`, `shortest_path`, `resilience_index`) (M) ← depends on: analysis + ablation engine
+- [ ] Build LangGraph agent loop (plan → call tool → observe → answer) with Claude via `langchain-anthropic` (M) ← depends on: tools
+- [ ] Wire the agent into the Streamlit dashboard as a chat panel; render tool outputs on the map (M) ← depends on: dashboard scaffold, agent
+- [ ] (Optional) LangGraph state-machine orchestration of the segmentation→healing→analysis pipeline with retry/branch nodes (L)
+
 ## Tech Recommendations
 | Layer | Recommendation | Reason |
 |-------|---------------|--------|
@@ -104,7 +112,8 @@ Satellite road extraction in dense Indian metropolises (e.g. Bengaluru) fails un
 | Graph analysis | NetworkX (betweenness, efficiency, shortest path) + OSMnx for OSM ground truth | Don't rebuild graph math; OSMnx loads OSM cleanly |
 | Topology metric | APLS (CosmiQ) | Standard, judge-credible, avoids a homemade metric |
 | Dashboard | Streamlit + streamlit-folium (Leaflet under the hood) | Fastest path to interactive map demo; Leaflet polish only if time |
-| Compute | GPU for training (local workstation), CPU for all graph/UI | Matches brief; lets the graph subteam work without GPU contention |
+| Agent / NL layer | LangGraph (agent + optional pipeline orchestration) + LangChain (tools) + `langchain-anthropic` → **Claude Sonnet 5** (`claude-sonnet-5`) for the loop, **Opus 4.8** (`claude-opus-4-8`) for hardest reasoning | LangGraph gives an explicit, debuggable state machine over tool calls — better than a raw prompt for multi-step graph queries; Claude is the default per house AI-app guidance |
+| Compute | GPU for training (local workstation), CPU for all graph/UI/agent | Matches brief; lets the graph subteam work without GPU contention; agent is API-based |
 
 ## Risks & Open Decisions
 ### Risks
@@ -122,6 +131,8 @@ Satellite road extraction in dense Indian metropolises (e.g. Bengaluru) fails un
 - [ ] Resilience Index definition: avg-shortest-path ratio (brief) vs global-efficiency ratio (handles disconnection better) — recommend reporting both
 - [ ] Edge weight: pure pixel length vs length × road-class speed (for travel-time realism)
 - [ ] Target AOI for the demo (Bengaluru tile) and which OSM extract to freeze
+- [ ] Conversational assistant scope: read-only Q&A over the graph (safe, fast to build) vs. letting the agent trigger live simulations — recommend read-only + explicit "run simulation" tool for the demo
+- [ ] LLM provider: default **Claude via `langchain-anthropic`** (`claude-sonnet-5`); confirm API key availability at the event, else fall back to a local model via `langchain-community`
 
 ## GitHub References
 - [jeffwen/road_building_extraction](https://github.com/jeffwen/road_building_extraction) — PyTorch U-Net for road/building extraction; clean reference training structure

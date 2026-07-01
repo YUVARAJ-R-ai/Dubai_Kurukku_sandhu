@@ -43,6 +43,8 @@ Satellite imagery
 
 **③ Criticality & stress testing.** **Betweenness centrality** surfaces "Gatekeeper Nodes" — intersections that sit on the most shortest paths. **Node-ablation** then removes them one by one to simulate floods/accidents/closures, and we compute a **Resilience Index** quantifying how far network efficiency degrades.
 
+**④ Conversational decision layer (agentic).** A planner shouldn't need graph theory to use this. A **LangGraph** agent — with the analysis functions exposed as **LangChain** tools and **Claude** (`langchain-anthropic`) doing the reasoning — turns a plain-English question (*"if Silk Board floods, which areas are cut off and by how much does travel time rise?"*) into the right sequence of tool calls (ablation → routing → resilience) and a clear, cited answer on the map. The same LangGraph state machine can orchestrate the pipeline itself, handling bad tiles or failed stages gracefully.
+
 *(See the architecture / data-flow diagram — issue #2 — for the full stage-by-stage view.)*
 
 ---
@@ -55,6 +57,7 @@ Satellite imagery
 | 2 | Ship a broken raster mask | **Heal** it into a routable graph with **MST + Union-Find**, distance-and-angle gated |
 | 3 | Report where roads are | Report **which roads matter** — betweenness criticality + a quantitative **Resilience Index** |
 | 4 | Static output | **Interactive what-if simulation** — disable a node, see live rerouting + travel-time increase |
+| 5 | Expert-only dashboards | **Agentic natural-language interface** — a LangGraph + LangChain assistant (Claude) lets non-technical planners *ask* for a resilience analysis in plain English |
 
 **Honest rigor:** betweenness alone is a known-imperfect resilience proxy, so our Resilience Index reports **largest-connected-component drop and global efficiency alongside it** — giving planners a defensible, multi-metric vulnerability score.
 
@@ -82,7 +85,7 @@ Satellite imagery
 - **Team Graph+UI** builds healing, analysis, and the dashboard *immediately* using mock / open-source vector baselines — no waiting on the model.
 - The two meet at a **frozen mask→graph GeoJSON contract (hour 1)**.
 
-**Stack:** PyTorch · segmentation-models-pytorch · Rasterio/GDAL · Albumentations · scikit-image + `sknw` · NetworkX + OSMnx · Streamlit + folium/Leaflet.
+**Stack:** PyTorch · segmentation-models-pytorch · Rasterio/GDAL · Albumentations · scikit-image + `sknw` · NetworkX + OSMnx · Streamlit + folium/Leaflet · **LangGraph + LangChain + `langchain-anthropic` (Claude)** for the conversational decision layer.
 
 ---
 
@@ -91,6 +94,7 @@ Satellite imagery
 1. **High-fidelity routable topology** — a mathematically connected vector network, far beyond pixel segmentation, generalizing across urban / suburban-forested / rural terrain.
 2. **Quantitative criticality map** — a spatial heatmap of high-betweenness "Gatekeeper Nodes" acting as single points of failure.
 3. **Predictive impact assessment** — a **Resilience Index** and an interactive dashboard where a planner disables a node and instantly sees rerouting and travel-time increase.
+4. **Conversational decision support** — a LangGraph/LangChain assistant that answers plain-English resilience questions by orchestrating the analysis tools, making the whole system usable by non-technical planners.
 
 **Evaluation metrics:** IoU & Dice with **occlusion-recall** · **Connectivity Ratio** (LCC gain after healing) · **APLS** topological accuracy vs OSM · relaxed IoU (3–5 px tolerance) · cross-terrain generalisation.
 
