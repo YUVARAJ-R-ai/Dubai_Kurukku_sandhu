@@ -18,12 +18,12 @@ flowchart TD
 
     subgraph SRC["📡 Data Sources"]
         direction LR
-        IMG["Sentinel-2 · LISS-IV · Cartosat-3"]
-        GT["SpaceNet · DeepGlobe · OSM"]
+        IMG["Cartosat-3 · pan-sharpened LISS-IV (primary)\nSentinel-2 (pre-train only)"]
+        GT["SpaceNet · DeepGlobe · OSM (drift-buffered)"]
     end
     class IMG,GT src
 
-    PREP["Tile · Augment · OSM Auto-label\nRasterio · GDAL · Albumentations"]
+    PREP["Tile · Augment · OSM Auto-label (3–5px buffer)\nRasterio · GDAL · Albumentations"]
     class PREP prep
 
     SRC --> PREP
@@ -40,9 +40,9 @@ flowchart TD
 
     subgraph GR["🔗 Graph Sub-team  [CPU · no GPU wait]"]
         direction TB
-        SKEL["Skeletonise\nscikit-image · sknw"]
-        HEAL["MST Healing\nUnion-Find · KD-tree"]
-        WGHT["Weighted Graph\nGeoJSON · GraphML"]
+        SKEL["Skeletonize + RDP simplify\nscikit-image · sknw"]
+        HEAL["Gated Gap-Bridging (cycle-preserving)\nUnion-Find · KD-tree"]
+        WGHT["Weighted Graph (OSM-class speeds)\nGeoJSON · GraphML"]
     end
     class SKEL,HEAL,WGHT gr
 
@@ -51,7 +51,7 @@ flowchart TD
     MASK --> HEAL
     SKEL --> HEAL --> WGHT
 
-    AN["Betweenness Centrality → Gatekeeper Nodes\nNode Ablation → Resilience Index\nNetworkX · OSMnx · APLS"]
+    AN["Betweenness (precomputed · k-sampled for live demo) → Gatekeeper Nodes\nNode Ablation → Resilience Index (global efficiency primary)\nNetworkX · OSMnx · APLS"]
     class AN an
 
     WGHT --> AN

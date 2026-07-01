@@ -15,14 +15,14 @@
 ## Slide 3: Proposed Solution
 **Header:** End-to-End Pipeline
 1. **Occlusion-Robust Segmentation:** Context-aware U-Net/SegFormer trained with synthetic occlusions and a topology-preserving clDice loss.
-2. **Topological Healing:** Convert mask to graph. Bridge gaps with Union-Find + MST, gated by distance and angle to prevent hallucinated shortcuts.
+2. **Topological Healing:** Convert mask to graph (skeletonize + `sknw`, cleaned with RDP simplification). Bridge gaps with Union-Find + a **cycle-preserving, distance/angle-gated reconnection** — closes gaps inside grid loops, not just isolated islands (a pure MST can't).
 3. **Criticality & Stress Testing:** Flag high Betweenness Centrality nodes ("Gatekeepers"). Simulate node failures and compute a Resilience Index.
 4. **Conversational AI Layer:** A LangGraph/Claude assistant that lets planners ask "what-if" questions in plain English.
 
 ## Slide 4: Architecture
 **Header:** System Architecture
 *[Insert image: docs/Prob4Extensivediagram.png]*
-- Satellite Imagery -> U-Net Segmentation -> Topological Healing (MST) -> Graph Analysis -> Interactive Agent Dashboard.
+- Satellite Imagery -> U-Net Segmentation -> Topological Healing (gated gap-bridging) -> Graph Analysis -> Interactive Agent Dashboard.
 *[Insert image: docs/Prob4ShortDia.png for simplified view if needed]*
 
 ## Slide 5: Differentiators
@@ -35,7 +35,7 @@
 
 ## Slide 6: Expected Outcomes & Resilience Index
 **Header:** Outcomes & Metrics
-- **Resilience Index:** We measure both baseline/perturbed average path length (R_apl) and global network efficiency (R_eff) to quantify vulnerability.
+- **Resilience Index:** Primary metric is **global network efficiency (R_eff)** — it degrades gracefully even when a closure disconnects the graph; average path length (R_apl) is reported alongside (it goes to ∞ on disconnection).
 - **High-Fidelity Topology:** A mathematically connected vector network generalizing across terrains.
 - **Criticality Map:** A spatial heatmap of high-betweenness single points of failure.
 - **Disaster Response & Urban Planning:** Instantly assess isolated sectors and infrastructure weak links.
@@ -45,11 +45,11 @@
 - **ML & CV:** PyTorch, segmentation-models-pytorch, Albumentations
 - **Geospatial & Graph:** Rasterio/GDAL, scikit-image, `sknw`, NetworkX, OSMnx
 - **App & AI:** Streamlit, folium/Leaflet, LangGraph, LangChain, Anthropic Claude
-- **Data:** Sentinel-2, Resourcesat LISS-IV, Cartosat-3, OSM vectors for ground truth
+- **Data:** Cartosat-3 (primary) + pan-sharpened Resourcesat LISS-IV; Sentinel-2 + open sets (SpaceNet/DeepGlobe) for pre-training; OSM vectors (drift-buffered) for ground truth
 
 ## Slide 8: Feasibility & Team
 **Header:** 30-Hour Build Feasibility
-- **Zero Manual Labeling:** Auto-rasterized OSM vectors; pre-train on open datasets (SpaceNet/DeepGlobe), fine-tune on Cartosat-3.
+- **Automated, Drift-Aware Labeling:** OSM vectors auto-rasterized with a 3–5 px buffer + relaxed IoU to absorb orthorectification drift; pre-train on open datasets (SpaceNet/DeepGlobe), fine-tune on Cartosat-3.
 - **Parallel Workflow:** ML/Data team handles segmentation; Graph/UI team builds healing and dashboard simultaneously using mock vector baselines. They meet at a frozen GeoJSON contract in Hour 1.
 - **Compute:** Graph analysis & dashboard are CPU-only; GPU is dedicated to ML fine-tuning.
 

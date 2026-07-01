@@ -39,7 +39,7 @@ Satellite imagery
 
 **① Occlusion-robust segmentation.** A context-aware deep-learning model (U-Net/DeepLabV3+ → SegFormer) trained with **synthetic occlusions** (shadows, canopy, vehicles) and a **topology-preserving clDice loss** so it infers road *continuity* under obstructions instead of dropping the pixels.
 
-**② Topological healing.** Convert the mask to a graph (skeletonize + `sknw`), then bridge occlusion gaps with a **Union-Find + Minimum-Spanning-Tree** algorithm gated by Euclidean distance *and* angular alignment — so healed roads follow a natural trajectory rather than hallucinating shortcuts. Output: a single connected, length/road-class-weighted graph exported as GeoJSON/GraphML.
+**② Topological healing.** Convert the mask to a graph (skeletonize + `sknw`, then **RDP simplification + node-merging** to collapse the spur edges and blobby-intersection micro-nodes that raw skeletonization produces), then bridge occlusion gaps with a **cycle-preserving, distance- and angle-gated reconnection**: Union-Find tracks road fragments while a nearest-neighbour endpoint bridge — unlike a pure MST — can also close gaps *inside* grid loops, not just reconnect fully isolated islands. Output: a single connected, weighted graph exported as GeoJSON/GraphML. Edges carry geometric length; travel-time weights use **OSM road-class speeds where a road already exists, and a default residential speed for newly-discovered, canopy-hidden edges** (the binary mask itself doesn't classify road type).
 
 **③ Criticality & stress testing.** **Betweenness centrality** surfaces "Gatekeeper Nodes" — intersections that sit on the most shortest paths. **Node-ablation** then removes them one by one to simulate floods/accidents/closures, and we compute a **Resilience Index** quantifying how far network efficiency degrades.
 
@@ -53,13 +53,13 @@ Satellite imagery
 
 | # | What most solutions do | What we do |
 |---|------------------------|-----------|
-| 1 | Optimise pixel accuracy (IoU) | Optimise **connectivity** via **clDice** topology-preserving loss (~73% fewer fragments vs Dice baseline) |
-| 2 | Ship a broken raster mask | **Heal** it into a routable graph with **MST + Union-Find**, distance-and-angle gated |
+| 1 | Optimise pixel accuracy (IoU) | Optimise **connectivity** via **clDice** topology-preserving loss (clDice paper reports ~73% fewer fragments vs a Dice baseline) |
+| 2 | Ship a broken raster mask | **Heal** it into a routable graph with a **cycle-preserving, distance/angle-gated reconnection** (Union-Find fragments + endpoint bridging that closes intra-loop gaps, not a pure MST) |
 | 3 | Report where roads are | Report **which roads matter** — betweenness criticality + a quantitative **Resilience Index** |
 | 4 | Static output | **Interactive what-if simulation** — disable a node, see live rerouting + travel-time increase |
 | 5 | Expert-only dashboards | **Agentic natural-language interface** — a LangGraph + LangChain assistant (Claude) lets non-technical planners *ask* for a resilience analysis in plain English |
 
-**Honest rigor:** betweenness alone is a known-imperfect resilience proxy, so our Resilience Index reports **largest-connected-component drop and global efficiency alongside it** — giving planners a defensible, multi-metric vulnerability score.
+**Honest rigor:** betweenness alone is a known-imperfect resilience proxy, so we treat it as a *shortlist* and rank real damage by **largest-connected-component drop and global network efficiency**. The latter is our **primary Resilience Index** — it degrades gracefully even when a closure disconnects the graph, whereas the average-path-length ratio blows up to ∞ there. Centrality is **precomputed once**, and the live click-to-disable demo uses **approximate (k-sampled) betweenness on a demo-sized AOI**, so the dashboard stays responsive instead of recomputing exact O(V·E) centrality per click.
 
 ---
 
@@ -74,9 +74,9 @@ Satellite imagery
 
 ## 5. Feasibility (30-hour build plan)
 
-**Data — zero manual labeling.**
-- Imagery: **Sentinel-2** (10 m) + **Resourcesat LISS-IV** (5.8 m), both open; **Cartosat-3** provided at the event.
-- Ground truth: **OpenStreetMap** vectors auto-rasterized into road masks; pre-train on **DeepGlobe / SpaceNet / OpenSatMap**.
+**Data — automated, drift-aware labeling.**
+- Imagery: we **standardize the model on one high-resolution band** — **Cartosat-3** (~sub-metre, provided at the event) with **pan-sharpened Resourcesat LISS-IV** (5.8 m) as backup — rather than mixing 10 m and sub-metre in a single network (a 2-lane road is sub-pixel at 10 m but a wide polygon at sub-metre, and one 30h model can't do both well). **Sentinel-2** and the open sets (**DeepGlobe / SpaceNet / OpenSatMap**) are used for **pre-training** only.
+- Ground truth: **OpenStreetMap** vectors auto-rasterized into masks, **buffered 3–5 px and scored with a relaxed IoU** to absorb the 5–15 m orthorectification drift between OSM and imagery — automated, but not naïvely "clean".
 
 **Compute.** Graph analysis + dashboard run on CPU. Only segmentation needs GPU — and we **fine-tune pretrained backbones**, not train from scratch, so it fits the 30-hour window.
 
